@@ -1,0 +1,207 @@
+
+
+how to store list, json , list of json in column in postgres using springboot
+
+like: 
+
+{
+  "name": "John Doe",
+  "city": "New York",
+  "listOfRoll": [101, 102, 103],
+  "listOfName": ["Alice", "Bob", "Charlie"],
+  "quizJson": {
+    "Math": ["Algebra", "Geometry"],
+    "Science": ["Physics", "Biology"]
+  },
+  "quizListOfJson": [
+    {
+      "History": ["World War I", "Renaissance"]
+    },
+    {
+      "Geography": ["Mountains", "Rivers"]
+    }
+  ]
+}
+
+
+
+there are lots of ways to do this but if i talk in more simpler way then there are two ways by which we can do this 
+
+1. this approach support latest spring boot project
+
+
+in modal class use 
+
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")  
+  
+
+this is built in support provided by spring hibernate without installing  any third dependency and here version is itself managed by springboot team only so no extra overhead for us to maintain its dependency
+
+
+
+2. this approach is old but support all version of springboot
+
+we have to use (vladmihalcea) dependency to store list, json , list of json in postgres column
+
+
+in pom.xml 
+
+<dependency>
+	<groupId>com.vladmihalcea</groupId>
+	<artifactId>hibernate-types-60</artifactId>
+	<version>2.21.1</version> 
+</dependency>     
+
+
+with 
+
+and in modal class use
+
+ @Type(JsonType.class)
+ @Column(columnDefinition = "jsonb")
+ 
+
+but disadvantage in this way is that if version gets mismatch then we can't run it 
+
+
+note: in both method if you donot write  @Column(columnDefinition = "jsonb") still no error will come your spring-boot code will run because under the hood  spring-boot will use as default 
+@Column(columnDefinition = "json")
+
+
+so one question is coming in your mind that if without writing this @Column(columnDefinition = "jsonb") also if springboot uses by default @Column(columnDefinition = "json") and still code run perfectly so why we use unnecessarily one line like @Column(columnDefinition = "jsonb")   why we donot write directly @Type(JsonType.class)  or  @JdbcTypeCode(SqlTypes.JSON) in single line and it looks more cleaner but here is a catch if you really care about performance and speed of query excecution you should use @Column(columnDefinition = "jsonb") 
+
+ because jsonb  supports
+
+1.Faster querying , 2.Automatic key sorting , 3.Storage efficiency , 4.Support for powerful operators
+
+so now we hope why you should include @Column(columnDefinition = "jsonb")  into your code even if it is not mandatory (optional)
+  
+  
+// first method:
+
+// example 
+
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import java.util.*;
+
+@Entity
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+
+public class Student {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+    private String city;
+
+  // 1. list of value like List<Long>
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<Long> listOfRoll;
+
+  // 2. list of value like List<String>
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<String> listOfName;
+
+  // 3. json of value like Map<String, List<String>>
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, List<String>> quizJson;
+
+  // 4. list of json of value like List<Map<String, List<String>>>
+
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<Map<String, List<String>>> quizListOfJson;
+
+}
+
+
+
+
+
+// second method:
+
+// example 
+
+
+import com.vladmihalcea.hibernate.type.json.JsonType;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.Type;
+import java.util.*;
+
+@Entity
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+
+public class Student {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+    private String city;
+
+   // 1. list of value like List<Long>
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<Long> listOfRoll;
+
+  // 2. list of value like List<String>
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<String> listOfName;
+
+ // 3. json of value like Map<String, List<String>>
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, List<String>> quizJson;
+
+ // 4. list of json of value like List<Map<String, List<String>>>
+
+
+   @Type(JsonType.class)
+   @Column(columnDefinition = "jsonb")
+   private List<Map<String, List<String>>> quizListOfJson;
+
+}
+
+
+
+and rest all respository,service,controller remain same as you do crud operation earlier
+
+so more prefereed approach is method 1 and if you willing to extra burdon of managing versions and extra pom.xml dpendency then go for approach 2 both approach will give same result
+
+
+
+
+
+
+
+
+
+
+
